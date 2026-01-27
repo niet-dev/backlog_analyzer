@@ -5,3 +5,6 @@ __pycache__
 todo.md
 *.csv
 *.xlsx
+settings.json
+reports.py
+test_pandas_learning.py
