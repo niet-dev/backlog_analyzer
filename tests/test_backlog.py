@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from data.backlog import BacklogExport
+from data import backlog as bl
 
 TEST_DATA = {
     "Game": ["Ms. Pac-Man", "Resident Evil", "Bomberman 64"],
@@ -11,18 +11,18 @@ TEST_DATA = {
 TEST_COLUMN_NAMES = list(TEST_DATA.keys())
 DEFAULT_DATAFRAME = pd.DataFrame(TEST_DATA)
 
-def column_names_as_list(export: BacklogExport) -> list[str]:
-    return export.data.columns.to_list()
+def empty_dataframe(column_names):
+    return pd.DataFrame({ x: [] for x in column_names })
 
 class TestBacklogExportConstructor:
     def test_default_constructor_creates_empty_dataframe(self):
-        backlog = BacklogExport()
+        backlog = bl.BacklogExport()
         
         assert isinstance(backlog.data, pd.DataFrame)
         assert backlog.data.empty
         
     def test_constructor_loads_dataframe(self):
-        backlog = BacklogExport(DEFAULT_DATAFRAME)
+        backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
         
         assert backlog.get_column_names() == TEST_COLUMN_NAMES
 
@@ -35,12 +35,9 @@ class TestColumnRenamer:
     @pytest.fixture
     def end_names(self):
         return ["Modified Game", "Modified Platform", "Modified Status"]
-    
-    def empty_dataframe(self, column_names):
-        return pd.DataFrame({ x: [] for x in column_names })
 
     def test_renames_columns(self, start_names, end_names):
-        backlog = BacklogExport(self.empty_dataframe([
+        backlog = bl.BacklogExport(empty_dataframe([
             "Game", 
             "Platform", 
             "Status"]))
@@ -53,7 +50,7 @@ class TestColumnRenamer:
             "Modified Status"]
 
     def test_leaves_nonmatching_columns(self, start_names, end_names):
-        backlog = BacklogExport(self.empty_dataframe([
+        backlog = bl.BacklogExport(empty_dataframe([
              "ID", 
              "Game", 
              "Platform", 
@@ -72,8 +69,9 @@ class TestColumnRenamer:
             "Release Date"]
         
     def test_raises_value_error_if_not_all_columns_renamed(
-        self, start_names, end_names):
-        backlog = BacklogExport(self.empty_dataframe([
+        self, start_names, end_names
+    ):
+        backlog = bl.BacklogExport(empty_dataframe([
             "ID", 
             "Game",
             "Completion"
@@ -84,8 +82,43 @@ class TestColumnRenamer:
         
         assert isinstance(exception_info.value, ValueError)
         
+    def test_keeps_original_data_if_value_error_is_raised(
+        self, start_names, end_names
+    ):
+        backlog = bl.BacklogExport(empty_dataframe([
+            "ID", 
+            "Game",
+            "Completion"
+        ]))
+        
+        start_columns = backlog.get_column_names()
+        
+        with pytest.raises(ValueError) as _:
+            backlog._rename_columns(start_names, end_names)
+            
+        assert backlog.get_column_names() == start_columns
+        
 class TestColumnNames:
     def test_returns_list_of_column_names(self):
-        backlog = BacklogExport(DEFAULT_DATAFRAME)
+        backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
         
         assert backlog.get_column_names() == TEST_COLUMN_NAMES
+        
+class TestAllRenamedColumnsExist:
+    def test_returns_true_if_all_columns_exist(self):
+        backlog = empty_dataframe(["ID", "Game", "Completion"])
+        target = ["ID", "Game", "Completion"]
+        
+        assert bl._all_renamed_columns_exist(backlog, target)
+        
+    def test_returns_false_if_a_column_is_missing_from_the_dataframe(self):
+        backlog = empty_dataframe(["ID", "Not Game", "Completion"])
+        target = ["ID", "Game", "Completion"]
+        
+        assert not bl._all_renamed_columns_exist(backlog, target)
+
+    def test_disregards_extra_columns(self):
+        backlog = empty_dataframe(["ID", "Another one", "Game", "This too", "Completion"])
+        target = ["ID", "Game", "Completion"]
+        
+        assert bl._all_renamed_columns_exist(backlog, target)
