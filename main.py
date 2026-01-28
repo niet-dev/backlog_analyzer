@@ -1,3 +1,5 @@
+from data import backlog
+
 import pandas as pd
 
 INFINITE_BACKLOG_COLUMNS = [
@@ -14,13 +16,3 @@ INFINITE_BACKLOG_COLUMNS = [
     "Last updated"
 ]
 
-
-class BacklogExport():
-    def __init__(self, path=None):
-        self.data = pd.DataFrame()
-    
-    def read_backlog_file(self, relative_path):
-        return pd.read_csv(relative_path)
-
-    def remove_extra_columns(self, dataframe):
-        return dataframe[dataframe.columns.intersection(INFINITE_BACKLOG_COLUMNS)]
