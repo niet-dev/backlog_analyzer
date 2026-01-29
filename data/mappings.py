@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class ColumnMapping:
     source_names: list[str]
     target_names: list[str]
-    
+
+
 INFINITE_BACKLOG_MAPPING = ColumnMapping(
     source_names=[
-        "IGDB ID", 
-        "Game name", 
+        "IGDB ID",
+        "Game name",
         "Game release date",
         "Platform",
         "Status",
@@ -22,7 +24,7 @@ INFINITE_BACKLOG_MAPPING = ColumnMapping(
     target_names=[
         "IGDB ID",
         "Game Name",
-        "Game Release Date",
+        "Release Date",
         "Platform",
         "Status",
         "Completion",
