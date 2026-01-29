@@ -82,6 +82,18 @@ class TestColumnRenamer:
         
         assert isinstance(exception_info.value, ValueError)
         
+    def test_sets_value_error_message(self, start_names, end_names):
+        backlog = bl.BacklogExport(empty_dataframe([
+            "ID", 
+            "Game",
+            "Completion"
+        ]))
+        
+        with pytest.raises(ValueError) as exception_info:
+            backlog._rename_columns(start_names, end_names)
+            
+        assert str(exception_info.value) == "One or more source columns is missing."
+        
     def test_keeps_original_data_if_value_error_is_raised(
         self, start_names, end_names
     ):
