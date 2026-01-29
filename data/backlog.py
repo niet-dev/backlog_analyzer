@@ -19,6 +19,9 @@ class BacklogExport():
         self._rename_columns()
         self._drop_extra_columns()
         self._generated = True
+    
+    def get_dataframe(self):
+        return self._data
         
     def _rename_columns(self) -> None:
         name_mapping = { x: y for x, y in zip(self._mapping.source_names, self._mapping.target_names) }

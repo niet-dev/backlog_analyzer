@@ -145,3 +145,14 @@ class TestGenerate:
         backlog.generate()
         
         assert backlog._generated == True
+
+class TestGetDataframe:
+    def test_returns_dataframe(self, default_backlog):
+        result = default_backlog.get_dataframe()
+        
+        assert isinstance(result, pd.DataFrame)
+        
+    def test_returns_the_correct_dataframe(self, default_backlog):
+        result = default_backlog.get_dataframe()
+        
+        assert result.equals(default_backlog._data)
