@@ -9,12 +9,19 @@ def _all_renamed_columns_exist(dataframe: pd.DataFrame, target_names: list[str])
 
 class BacklogExport():
     _data: pd.DataFrame
+    _generated: bool
     
     def __init__(self, data: pd.DataFrame=pd.DataFrame()) -> None:
         self._data = data
+        self._generated = False
         
     def get_column_names(self) -> list[str]:
         return self._data.columns.to_list()
+    
+    def generate(self, source_names, target_names):
+        self._rename_columns(source_names, target_names)
+        self._drop_extra_columns(target_names)
+        self._generated = True
         
     def _rename_columns(
         self, source_names: list[str], target_names: list[str]) -> None:
@@ -27,5 +34,5 @@ class BacklogExport():
         
         self._data = result
         
-    def _drop_extra_columns(self, list):
-        self._data = self._data[list]
+    def _drop_extra_columns(self, columns_to_keep):
+        self._data = self._data[columns_to_keep]
