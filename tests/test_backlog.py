@@ -18,8 +18,8 @@ class TestBacklogExportConstructor:
     def test_default_constructor_creates_empty_dataframe(self):
         backlog = bl.BacklogExport()
         
-        assert isinstance(backlog.data, pd.DataFrame)
-        assert backlog.data.empty
+        assert isinstance(backlog._data, pd.DataFrame)
+        assert backlog._data.empty
         
     def test_constructor_loads_dataframe(self):
         backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
@@ -134,3 +134,24 @@ class TestAllRenamedColumnsExist:
         target = ["ID", "Game", "Completion"]
         
         assert bl._all_renamed_columns_exist(backlog, target)
+
+class TestDropExtraColumns:
+    def test_drops_columns_not_in_list(self):
+        test_dataframe = empty_dataframe(["ID", "Another one", "Game", "This too", "Completion"])
+        backlog = bl.BacklogExport(test_dataframe)
+        target = ["ID", "Game", "Completion"]
+        
+        backlog._drop_extra_columns(target)
+        
+        assert backlog.get_column_names() == target
+        
+    def test_throws_key_error_if_column_is_missing(self):
+        test_dataframe = empty_dataframe(["ID", "Another one", "This too", "Completion"])
+        backlog = bl.BacklogExport(test_dataframe)
+        target = ["ID", "Game", "Completion"]
+        
+        with pytest.raises(KeyError) as exception_info:
+            backlog._drop_extra_columns(target)
+        
+        assert isinstance(exception_info.value, KeyError)
+        
