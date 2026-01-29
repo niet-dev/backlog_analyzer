@@ -2,60 +2,54 @@ import pandas as pd
 import pytest
 
 from data import backlog as bl
+from data import mappings
+
 
 TEST_DATA = {
+    "ID": [5, 6, 7],
     "Game": ["Ms. Pac-Man", "Resident Evil", "Bomberman 64"],
-    "Platform": ["Arcade", "Playstation", "Nintendo 64"],
-    "Status": ["Unplayed", "Played", "Played"]
+    "Completion": ["Unplayed", "Played", "Played"]
 }
 TEST_COLUMN_NAMES = list(TEST_DATA.keys())
 DEFAULT_DATAFRAME = pd.DataFrame(TEST_DATA)
+
+TEST_SOURCE_COLUMNS = ["ID", "Game", "Completion"]
+TEST_TARGET_COLUMNS = ["IGDB ID", "Game Name", "Completion Status"]
+DEFAULT_MAPPING = mappings.ColumnMapping(TEST_SOURCE_COLUMNS, TEST_TARGET_COLUMNS)
 
 def empty_dataframe(column_names):
     return pd.DataFrame({ x: [] for x in column_names })
 
 def empty_backlog(column_names):
-    return bl.BacklogExport(empty_dataframe(column_names))
+    return bl.BacklogExport(empty_dataframe(column_names), DEFAULT_MAPPING)
+
+@pytest.fixture
+def default_backlog():
+    return bl.BacklogExport(DEFAULT_DATAFRAME, DEFAULT_MAPPING)
 
 class TestBacklogExportConstructor:
-    def test_default_constructor_creates_empty_dataframe(self):
-        backlog = bl.BacklogExport()
+    def test_constructor_initializes_dataframe(self, default_backlog):
+        assert isinstance(default_backlog._data, pd.DataFrame)
         
-        assert isinstance(backlog._data, pd.DataFrame)
-        assert backlog._data.empty
+    def test_constructor_initializes_mapping(self, default_backlog):
+        assert isinstance(default_backlog._mapping, mappings.ColumnMapping)
         
-    def test_constructor_loads_dataframe(self):
-        backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
+    def test_constructor_loads_dataframe(self, default_backlog):        
+        assert default_backlog._data.equals(DEFAULT_DATAFRAME)
         
-        assert backlog.get_column_names() == TEST_COLUMN_NAMES
+    def test_constructor_loads_mapping(self, default_backlog):
+        assert default_backlog._mapping == DEFAULT_MAPPING
         
-    def test_constructor_sets_generated_to_false(self):
-        backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
-        
-        assert backlog._generated == False
+    def test_constructor_sets_generated_to_false(self, default_backlog):        
+        assert default_backlog._generated == False
 
-"""Map the columns using rename, throw an exception if one is not found"""
 class TestColumnRenamer:
-    @pytest.fixture
-    def start_names(self) -> list[str]:
-        return ["Game", "Platform", "Status"]
-    
-    @pytest.fixture
-    def end_names(self) -> list[str]:
-        return ["Modified Game", "Modified Platform", "Modified Status"]
+    def test_renames_columns(self, default_backlog):
+        default_backlog._rename_columns()
 
-    def test_renames_columns(self, start_names, end_names):
-        backlog = empty_backlog(["Game", "Platform", "Status"])
+        assert default_backlog.get_column_names() == TEST_TARGET_COLUMNS
 
-        backlog._rename_columns(start_names, end_names)
-
-        assert backlog.get_column_names() == [
-            "Modified Game", 
-            "Modified Platform", 
-            "Modified Status"
-        ]
-
-    def test_leaves_nonmatching_columns(self, start_names, end_names):
+    def test_leaves_nonmatching_columns(self):
         backlog = empty_backlog([
             "ID", 
             "Game", 
@@ -65,105 +59,89 @@ class TestColumnRenamer:
             "Release Date"
         ])
 
-        backlog._rename_columns(start_names, end_names)
+        backlog._rename_columns()
         
         assert backlog.get_column_names() == [
-            "ID", 
-            "Modified Game", 
-            "Modified Platform", 
-            "Completion", 
-            "Modified Status", 
+            "IGDB ID", 
+            "Game Name", 
+            "Platform", 
+            "Completion Status", 
+            "Status", 
             "Release Date"
         ]
         
-    def test_raises_value_error_if_not_all_columns_renamed(
-        self, start_names, end_names
-    ):
-        backlog = empty_backlog(["ID", "Game", "Completion"])
+    def test_raises_value_error_if_not_all_columns_renamed(self):
+        backlog = empty_backlog(["ID", "Platform", "Completion"])
         
         with pytest.raises(ValueError) as exception_info:
-            backlog._rename_columns(start_names, end_names)
+            backlog._rename_columns()
         
         assert isinstance(exception_info.value, ValueError)
         
-    def test_sets_value_error_message(self, start_names, end_names):
-        backlog = empty_backlog(["ID", "Game", "Completion"])
+    def test_sets_value_error_message(self):
+        backlog = empty_backlog(["ID", "Platform", "Completion"])
         
         with pytest.raises(ValueError) as exception_info:
-            backlog._rename_columns(start_names, end_names)
+            backlog._rename_columns()
             
         assert str(exception_info.value) == "One or more source columns is missing."
         
-    def test_keeps_original_data_if_value_error_is_raised(
-        self, start_names, end_names
-    ):
-        backlog = empty_backlog(["ID", "Game", "Completion"])
-        
-        start_columns = backlog.get_column_names()
+    def test_keeps_original_data_if_value_error_is_raised(self):
+        backlog = empty_backlog(["ID", "Platform", "Completion"])
+        original_data = backlog._data
         
         with pytest.raises(ValueError) as _:
-            backlog._rename_columns(start_names, end_names)
+            backlog._rename_columns()
             
-        assert backlog.get_column_names() == start_columns
+        assert backlog._data.equals(original_data)
         
 class TestColumnNames:
-    def test_returns_list_of_column_names(self):
-        backlog = bl.BacklogExport(DEFAULT_DATAFRAME)
-        
-        assert backlog.get_column_names() == TEST_COLUMN_NAMES
+    def test_returns_list_of_column_names(self, default_backlog):
+        assert default_backlog.get_column_names() == TEST_COLUMN_NAMES
         
 class TestAllRenamedColumnsExist:
-    def test_returns_true_if_all_columns_exist(self):
-        backlog = empty_dataframe(["ID", "Game", "Completion"])
-        target = ["ID", "Game", "Completion"]
+    def test_returns_true_if_all_columns_exist(self, default_backlog):
+        test_data = empty_dataframe(["IGDB ID", "Game Name", "Completion Status"])
         
-        assert bl._all_renamed_columns_exist(backlog, target)
+        assert default_backlog._all_renamed_columns_exist(test_data)
         
-    def test_returns_false_if_a_column_is_missing_from_the_dataframe(self):
-        backlog = empty_dataframe(["ID", "Not Game", "Completion"])
-        target = ["ID", "Game", "Completion"]
+    def test_returns_false_if_a_column_is_missing_from_the_dataframe(self, default_backlog):
+        test_data = empty_dataframe(["IGDB ID", "Not Game", "Completion Status"])
         
-        assert not bl._all_renamed_columns_exist(backlog, target)
+        assert not default_backlog._all_renamed_columns_exist(test_data)
 
-    def test_disregards_extra_columns(self):
-        backlog = empty_dataframe(["ID", "Another one", "Game", "This too", "Completion"])
-        target = ["ID", "Game", "Completion"]
+    def test_disregards_extra_columns(self, default_backlog):
+        test_data = empty_dataframe(["IGDB ID", "Another one", "Game Name", "This too", "Completion Status"])
         
-        assert bl._all_renamed_columns_exist(backlog, target)
+        assert default_backlog._all_renamed_columns_exist(test_data)
 
 class TestDropExtraColumns:
     def test_drops_columns_not_in_list(self):
-        backlog = empty_backlog(["ID", "Another one", "Game", "This too", "Completion"])
-        target = ["ID", "Game", "Completion"]
+        backlog = empty_backlog(["IGDB ID", "Another one", "Game Name", "This too", "Completion Status"])
+
+        backlog._drop_extra_columns()
         
-        backlog._drop_extra_columns(target)
-        
-        assert backlog.get_column_names() == target
+        assert backlog.get_column_names() == TEST_TARGET_COLUMNS
         
     def test_throws_key_error_if_column_is_missing(self):
         backlog = empty_backlog(["ID", "Another one", "This too", "Completion"])
-        target = ["ID", "Game", "Completion"]
         
         with pytest.raises(KeyError) as exception_info:
-            backlog._drop_extra_columns(target)
+            backlog._drop_extra_columns()
         
         assert isinstance(exception_info.value, KeyError)
         
 class TestGenerate:
     def test_renames_and_drops(self):
         backlog = empty_backlog(["ID", "Another one", "Game", "This too", "Completion"])
-        rename_source = ["ID", "Game", "Completion"]
-        target = ["IGDB ID", "Game Name", "Completion Status"]
 
-        backlog.generate(rename_source, target)
+        backlog.generate()
         
-        assert backlog.get_column_names() == target
+        assert backlog.get_column_names() == TEST_TARGET_COLUMNS
         
     def test_sets_generated_to_true(self):
         backlog = empty_backlog(["ID", "Another one", "Game", "This too", "Completion"])
-        rename_source = ["ID", "Game", "Completion"]
-        target = ["IGDB ID", "Game Name", "Completion Status"]
 
-        backlog.generate(rename_source, target)
+        backlog.generate()
         
         assert backlog._generated == True
