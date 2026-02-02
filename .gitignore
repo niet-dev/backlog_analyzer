@@ -7,4 +7,4 @@ todo.md
 *.xlsx
 settings.json
 reports.py
-test_pandas_learning.py
+tests/learning
