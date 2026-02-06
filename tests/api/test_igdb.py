@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 import requests
 
-from api import igdb
+from api.igdb import IGDBAPI
 
 TEST_CLIENT_ID = "id"
 TEST_CLIENT_SECRET = "secret"
@@ -33,34 +33,51 @@ class MockedResponse:
         if self.status_code != 200:
             raise requests.HTTPError
 
+@pytest.fixture
+def api():
+    return IGDBAPI(TEST_CLIENT_ID)
+
 class TestGetAuthQueryParams:
-    def test_builds_parameters(self):
-        result = igdb._get_auth_query_params(TEST_CLIENT_ID, TEST_CLIENT_SECRET)
+    def test_builds_parameters(self, api, mocker: MockerFixture):
+        mocker.patch("requests.post")
+        
+        result = api._get_auth_query_params(TEST_CLIENT_SECRET)
         
         assert result == MOCK_AUTH_PARAMS
 
-class TestGetAuthToken:
-    def test_posts_to_endpoint(self, mocker: MockerFixture):
+class TestRequestAuthToken:
+    def test_posts_to_endpoint(self, api, mocker: MockerFixture):
         mocked_request = mocker.patch("requests.post")
         
-        igdb.get_auth_token(TEST_CLIENT_ID, TEST_CLIENT_SECRET)
+        api.request_auth_token(TEST_CLIENT_SECRET)
         
-        mocked_request.assert_called_once_with(igdb.AUTH_ENDPOINT_BASE, data=MOCK_AUTH_PARAMS)
+        mocked_request.assert_called_once_with(api.endpoint, data=MOCK_AUTH_PARAMS)
         
-    def test_returns_token_if_200_status_code(self, mocker: MockerFixture):
+    def test_sets_token_if_200_status_code(self, api, mocker: MockerFixture):
         mocked_response = MockedResponse(200, MOCK_AUTH_RESPONSE)
         mocked_request = mocker.patch("requests.post")
         mocked_request.return_value = mocked_response
         
-        token = igdb.get_auth_token(TEST_CLIENT_ID, TEST_CLIENT_SECRET)
+        api.request_auth_token(TEST_CLIENT_SECRET)
         
-        assert token == MOCK_AUTH_RESPONSE["access_token"]
+        assert api._token == MOCK_AUTH_RESPONSE["access_token"]
         
     def test_raises_http_error_if_bad_status_code(
-        self, mocker: MockerFixture):
+        self, api, mocker: MockerFixture):
         mocked_response = MockedResponse(403, MOCK_AUTH_ERROR)
         mocked_request = mocker.patch("requests.post")
         mocked_request.return_value = mocked_response
         
         with pytest.raises(requests.HTTPError) as _:
-            igdb.get_auth_token(TEST_CLIENT_ID, TEST_CLIENT_SECRET)
+            api.request_auth_token(TEST_CLIENT_SECRET)
+
+class TestGetToken:
+    def test_returns_token(self, api, mocker: MockerFixture):
+        mocked_response = MockedResponse(200, MOCK_AUTH_RESPONSE)
+        mocked_request = mocker.patch("requests.post")
+        mocked_request.return_value = mocked_response
+        
+        api.request_auth_token(TEST_CLIENT_SECRET)
+        
+        assert api.get_token() == MOCK_AUTH_RESPONSE["access_token"]
+        
