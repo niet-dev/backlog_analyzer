@@ -1,6 +1,8 @@
 import requests
 from typing import Final
 
+from data.igdb import IGDBGame, IGDBGamesResponse
+
 AUTH_ENDPOINT_BASE: Final[str] = "https://id.twitch.tv/oauth2/token"
 GAME_FIELDS: Final[list[str]] = [
     "id",
@@ -47,19 +49,23 @@ class IGDBAPI:
             "grant_type": "client_credentials"
         }
 
-    def get_request_header(self) -> dict:
+    def get_request_headers(self) -> dict:
         return {
             "Client-ID": self.get_client_id(),
             "Authorization": f"Bearer {self.get_token()}"
         }
     
-    def game_by_id(self, id: int):
+    def game_by_id(self, id: int) -> IGDBGame:
         request_data = f"fields {",".join(GAME_FIELDS)};where id = {id};"
         
-        response = requests.post(f"{AUTH_ENDPOINT_BASE}/games",data=request_data)
-        response_data = response.json()
+        response = requests.post(
+            f"{AUTH_ENDPOINT_BASE}/games",
+            data=request_data,
+            headers=self.get_request_headers()
+        )
+        response_data: IGDBGamesResponse = response.json()
         
         if not response_data: 
             raise ValueError(f"Could not find matching IGDB entry for ID {id}")
             
-    
+        return response_data[0]
