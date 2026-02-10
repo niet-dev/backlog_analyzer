@@ -1,18 +1,32 @@
 import requests
+from typing import Final
 
-
-AUTH_ENDPOINT_BASE = "https://id.twitch.tv/oauth2/token"
+AUTH_ENDPOINT_BASE: Final[str] = "https://id.twitch.tv/oauth2/token"
+GAME_FIELDS: Final[list[str]] = [
+    "id",
+    "first_release_date",
+    "franchises",
+    "game_modes",
+    "genres",
+    "involved_companies",
+    "keywords",
+    "name",
+    "platforms",
+    "player_perspectives",
+    "tags",
+    "themes"
+]
 
 class IGDBAPI:
     endpoint: str
     _client_id: str
     _token: str
     
-    def __init__(self, client_id):
+    def __init__(self, client_id: str) -> None:
         self.endpoint = AUTH_ENDPOINT_BASE
         self._client_id = client_id
     
-    def request_auth_token(self, client_secret):
+    def request_auth_token(self, client_secret: str) -> None:
         query_params = self._get_auth_query_params(client_secret)
         
         response = requests.post(AUTH_ENDPOINT_BASE, data=query_params)
@@ -20,12 +34,32 @@ class IGDBAPI:
         
         self._token = response.json()["access_token"]
         
-    def get_token(self):
+    def get_token(self) -> str:
         return self._token
     
-    def _get_auth_query_params(self, client_secret):
+    def get_client_id(self) -> str:
+        return self._client_id
+    
+    def _get_auth_query_params(self, client_secret) -> dict:
         return {
             "client_id": self._client_id,
             "client_secret": client_secret,
             "grant_type": "client_credentials"
         }
+
+    def get_request_header(self) -> dict:
+        return {
+            "Client-ID": self.get_client_id(),
+            "Authorization": f"Bearer {self.get_token()}"
+        }
+    
+    def game_by_id(self, id: int):
+        request_data = f"fields {",".join(GAME_FIELDS)};where id = {id};"
+        
+        response = requests.post(f"{AUTH_ENDPOINT_BASE}/games",data=request_data)
+        response_data = response.json()
+        
+        if not response_data: 
+            raise ValueError(f"Could not find matching IGDB entry for ID {id}")
+            
+    
