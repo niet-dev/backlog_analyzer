@@ -18,3 +18,9 @@ class IGDBGame(BaseModel):
     themes: list[int]
 
 IGDBGamesResponse = NewType("IGDBGamesResponse", list[IGDBGame])
+
+class IGDBGenre(BaseModel):
+    id: int
+    name: str
+    
+IGDBGenresResponse = NewType("IGDBGenresResponse", list[IGDBGenre])

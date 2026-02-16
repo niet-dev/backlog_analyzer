@@ -1,7 +1,12 @@
 import requests
 from typing import Final
 
-from data.igdb import IGDBGame, IGDBGamesResponse
+from data.igdb import (
+    IGDBGame, 
+    IGDBGamesResponse, 
+    IGDBGenre, 
+    IGDBGenresResponse
+)
 
 AUTH_ENDPOINT_BASE: Final[str] = "https://id.twitch.tv/oauth2/token"
 GAME_FIELDS: Final[list[str]] = [
@@ -17,6 +22,10 @@ GAME_FIELDS: Final[list[str]] = [
     "player_perspectives",
     "tags",
     "themes"
+]
+GENRE_FIELDS: Final[list[str]] = [
+    "id",
+    "name"
 ]
 
 class IGDBAPI:
@@ -66,6 +75,21 @@ class IGDBAPI:
         response_data: IGDBGamesResponse = response.json()
         
         if not response_data: 
-            raise ValueError(f"Could not find matching IGDB entry for ID {id}")
+            raise ValueError(f"Could not find matching IGDB Games entry for ID {id}")
             
+        return response_data[0]
+    
+    def genre_by_id(self, id: int) -> IGDBGenre:
+        request_data = f"fields {",".join(GENRE_FIELDS)};where id = {id};"
+
+        response = requests.post(
+            f"{AUTH_ENDPOINT_BASE}/genres",
+            data=request_data,
+            headers=self.get_request_headers()
+        )
+        response_data: IGDBGenresResponse = response.json()
+        
+        if not response_data:
+            raise ValueError(f"Could not find matching IGDB Genre entry for ID {id}")
+        
         return response_data[0]
