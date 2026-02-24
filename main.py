@@ -1,16 +1,32 @@
-from data import backlog, mappings
-
+from dotenv import load_dotenv
 import pandas as pd
+from sqlmodel import (
+    create_engine,
+    Session,
+    SQLModel
+)
 
+from .api import fetch_auth_token
+from .cache import process_game
+
+load_dotenv()
+
+
+SQLITE_FILE_NAME = "database.db"
 
 def main():
-    export_data = pd.read_csv("data.csv")
-    backlog_data = backlog.BacklogExport(
-        export_data, mappings.INFINITE_BACKLOG_MAPPING)
-    backlog_data.generate()
+    df = pd.read_csv("data.csv")
+    print(f"{len(df)} games read from csv.")
+    
+    sqlite_url = f"sqlite:///{SQLITE_FILE_NAME}"
+    engine = create_engine(sqlite_url)
+    SQLModel.metadata.create_all(engine)
 
-    print(backlog_data.get_dataframe())
+    token = fetch_auth_token()
 
-
+    with Session(engine) as session:
+        for game_id in df["IGDB ID"].to_list():
+            process_game(game_id, token, session)
+            
 if __name__ == "__main__":
     main()
