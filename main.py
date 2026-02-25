@@ -1,3 +1,6 @@
+import logging
+import os
+
 from dotenv import load_dotenv
 import pandas as pd
 from sqlmodel import (
@@ -6,19 +9,19 @@ from sqlmodel import (
     SQLModel
 )
 
-from .api import fetch_auth_token
-from .cache import process_game
+from data.api import fetch_auth_token
+from data.cache import process_game
 
 load_dotenv()
 
-
-SQLITE_FILE_NAME = "database.db"
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 def main():
     df = pd.read_csv("data.csv")
-    print(f"{len(df)} games read from csv.")
+    logger.info(f"{len(df)} games read from csv.")
     
-    sqlite_url = f"sqlite:///{SQLITE_FILE_NAME}"
+    sqlite_url = f"sqlite:///{os.getenv("SQLITE_FILE_NAME")}"
     engine = create_engine(sqlite_url)
     SQLModel.metadata.create_all(engine)
 

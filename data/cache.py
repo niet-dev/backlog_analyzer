@@ -1,3 +1,4 @@
+import logging
 from typing import TypeVar
 
 from sqlmodel import select, Session, SQLModel
@@ -7,11 +8,15 @@ from .models import APIGame, Franchise, Game, GameMode, Genre, Keyword, Platform
 
 T = TypeVar("T", bound=SQLModel)
 
+logger = logging.getLogger(__name__)
+
+
 def process_game(game_id: int, token: str, session: Session) -> None:
     if game_is_cached(game_id, session):
+        logger.info(f"Found cached Game {game_id}")
         return
     
-    print(f"Requesting data for Game {game_id}")
+    logger.info(f"Requesting data for Game {game_id}")
     
     data: APIGame = fetch_game_by_id(game_id, token)
     game = Game(id=data.id, name=data.name)
@@ -43,10 +48,12 @@ def get_or_fetch(
     ) -> T:
     result = session.get(model, id)
     if result is None:
-        print(f"Requesting data for {model.__name__} {id}")
+        logger.info(f"Requesting data for {model.__name__} {id}")
         data = fetch_foreign_key_object(id, endpoint, token)
         result = model.model_validate(data)
         session.add(result)
+    else:
+        logger.info(f"Found cached {model.__name__} {id}")
     return result
 
 
