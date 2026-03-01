@@ -9,3 +9,4 @@ settings.json
 reports.py
 tests/learning
 *.db
+*.ipynb

@@ -11,6 +11,7 @@ from sqlmodel import (
 
 from data.api import fetch_auth_token
 from data.cache import process_game
+from data.df import format_export_df, merge_columns
 
 load_dotenv()
 
@@ -18,8 +19,8 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(leve
 logger = logging.getLogger(__name__)
 
 def main():
-    df = pd.read_csv("data.csv")
-    logger.info(f"{len(df)} games read from csv.")
+    export_df = pd.read_csv("data.csv")
+    logger.info(f"{len(export_df)} games read from csv.")
     
     sqlite_url = f"sqlite:///{os.getenv("SQLITE_FILE_NAME")}"
     engine = create_engine(sqlite_url)
@@ -28,8 +29,12 @@ def main():
     token = fetch_auth_token()
 
     with Session(engine) as session:
-        for game_id in df["IGDB ID"].to_list():
+        for game_id in export_df["IGDB ID"].to_list():
             process_game(game_id, token, session)
+    
+    formatted_df = format_export_df(export_df)
+    merged_df = merge_columns(formatted_df, engine)
+    print(merged_df.loc["Fallout: New Vegas"])
             
 if __name__ == "__main__":
     main()

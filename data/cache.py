@@ -3,8 +3,18 @@ from typing import TypeVar
 
 from sqlmodel import select, Session, SQLModel
 
-from .api import fetch_game_by_id, fetch_foreign_key_object
-from .models import APIGame, Franchise, Game, GameMode, Genre, Keyword, Platform, PlayerPerspective, Theme
+from data.api import fetch_game_by_id, fetch_foreign_key_object
+from data.models import (
+    APIGame,
+    Franchise,
+    Game,
+    GameMode,
+    Genre,
+    Keyword,
+    Platform,
+    PlayerPerspective,
+    Theme
+)
 
 T = TypeVar("T", bound=SQLModel)
 
