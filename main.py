@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     export_df = pd.read_csv("data.csv")
+    export_df = export_df[export_df["Type"].isna()]
+    
     logger.info(f"{len(export_df)} games read from csv.")
     
     sqlite_url = f"sqlite:///{os.getenv("SQLITE_FILE_NAME")}"
@@ -34,7 +36,7 @@ def main():
     
     formatted_df = format_export_df(export_df)
     merged_df = merge_columns(formatted_df, engine)
-    print(merged_df.loc["Fallout: New Vegas"])
+    print(merged_df.head(10))
             
 if __name__ == "__main__":
     main()

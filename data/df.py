@@ -133,7 +133,6 @@ def merge_columns(export_df: pd.DataFrame, engine: Engine) -> pd.DataFrame:
                 left_on="id",
                 right_on="id"
             )
-            .set_index("name")
     )
     return merged_df
 

@@ -3,14 +3,14 @@ from sqlmodel import Field, Relationship, SQLModel
 
 class APIGame(BaseModel):
     id: int
-    franchises: list[int]
-    game_modes: list[int]
-    genres: list[int]
-    keywords: list[int]
+    franchises: list[int] = []
+    game_modes: list[int] = []
+    genres: list[int] = []
+    keywords: list[int] = []
     name: str
-    platforms: list[int]
-    player_perspectives: list[int]
-    themes: list[int]
+    platforms: list[int] = []
+    player_perspectives: list[int] = []
+    themes: list[int] = []
 
 class APIForeignKey(BaseModel):
     id: int
