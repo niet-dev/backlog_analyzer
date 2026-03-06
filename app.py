@@ -1,6 +1,5 @@
 import logging
 
-
 from dotenv import load_dotenv
 from matplotlib.figure import Figure
 import pandas as pd
@@ -9,6 +8,7 @@ import seaborn as sns
 import streamlit as st
 
 from data import pipeline, plots
+
 
 load_dotenv()
 
@@ -24,9 +24,9 @@ uploaded_file = st.file_uploader("Upload your IB export .csv")
 if uploaded_file is not None:
     df = pipeline.process_df(pd.read_csv(uploaded_file))
     
-    df_genre_playtime = plots.avg_playtime_by_genre(df)
-    
     sns.set_theme()
     
-    fig = plots.generate_chart(sns.barplot, df_genre_playtime, x="playtime", y="genres")
-    display_chart("Average playtime by genre", fig)
+    for column in ["genres", "themes", "game_modes", "player_perspectives", "keywords"]:
+        grouped_df = plots.avg_playtime(df, column)
+        fig = plots.generate_chart(sns.barplot, grouped_df, x="playtime", y=column)
+        display_chart(f"Average playtime by {column}", fig)

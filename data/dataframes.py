@@ -136,3 +136,28 @@ def merge_columns(export_df: pd.DataFrame, engine: Engine) -> pd.DataFrame:
     )
     return merged_df
 
+def validate_columns(df: pd.DataFrame, columns: list[str]):
+    missing = set(columns) - set(df.columns)
+    if missing:
+        raise ValueError(f"DataFrame missing required columns: {missing}")
+
+def playtime_minutes_to_hours(df: pd.DataFrame) -> pd.DataFrame:
+    validate_columns(df, ["playtime"])
+    
+    modified_df = df.copy()
+    modified_df["playtime"] = (modified_df["playtime"] / 60).round(1)
+    
+    print(modified_df["playtime"])
+    
+    return modified_df
+
+def drop_games_with_no_playtime(df: pd.DataFrame) -> pd.DataFrame:
+    validate_columns(df, ["playtime"])
+    
+    modified_df = df.copy()
+    
+    modified_df = modified_df[
+        modified_df["playtime"] > 0
+    ]
+    
+    return modified_df
