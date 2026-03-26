@@ -137,6 +137,7 @@ def merge_columns(export_df: pd.DataFrame, engine: Engine) -> pd.DataFrame:
     return merged_df
 
 def validate_columns(df: pd.DataFrame, columns: list[str]):
+    """Raises a ValueError if any element of `columns` is not a column of `df`."""
     missing = set(columns) - set(df.columns)
     if missing:
         raise ValueError(f"DataFrame missing required columns: {missing}")

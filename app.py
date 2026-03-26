@@ -30,3 +30,8 @@ if uploaded_file is not None:
         grouped_df = plots.avg_playtime(df, column)
         fig = plots.generate_chart(sns.barplot, grouped_df, x="playtime", y=column)
         display_chart(f"Average playtime by {column}", fig)
+
+    for column in ["genres", "themes", "game_modes", "player_perspectives", "keywords"]:
+        grouped_df = plots.avg_rating(df, column)
+        fig = plots.generate_chart(sns.barplot, grouped_df, x="rating", y=column)
+        display_chart(f"Average rating by {column}", fig)
