@@ -28,6 +28,6 @@ Replace the sample values with your own Client ID and Secret, then rename the fi
 ### Run
 With your virtual environment enabled, navigate to the root project directory and run:
 
-`$ streamlit run app.py`
+`$ streamlit run Home.py`
 
 A new page will open in your default web browser.
